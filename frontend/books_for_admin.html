@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        /* Custom CSS styles */
+        .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card img {
+            max-width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        #bookList .col-md-4 {
+            height: 100%;
+            margin-bottom: 20px;
+        }
+
+        .background-row {
+            background: url('secindcover.jpg') no-repeat center center;
+            background-size: cover;
+            height: 100vh;
+            color: white;
+        }
+
+        .background-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            height: 100%;
+        }
+
+        .btn {
+            color: gray;
+        }
+
+        .update-btn {
+            background-color: transparent;
+            color: #6c757d;
+            /* Grey color */
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">Home page</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" id="loanBookLink" href="loan_book.html">Loan Book</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="return.html">Return Book</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1 style="text-align: center;">Books</h1>
+        <div class="mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by Title">
+        </div>
+        <div id="bookList" class="row"></div>
+    </div>
+
+    <!-- Update Book Modal -->
+    <div class="modal fade" id="updateBookModal" tabindex="-1" role="dialog" aria-labelledby="updateBookModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateBookModalLabel">Update Book</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateBookForm">
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input type="text" class="form-control" id="title" placeholder="Enter title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="author">Author:</label>
+                            <input type="text" class="form-control" id="author" placeholder="Enter author" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="published_date">Published Date:</label>
+                            <input type="text" class="form-control" id="published_date"
+                                placeholder="Enter published date">
+                        </div>
+                        <div class="form-group">
+                            <label for="type">Type</label>
+                            <select class="form-control" id="type" name="type" required>
+                                <option value="1">Loan for 15 days</option>
+                                <option value="2">Loan for 10 days</option>
+                                <option value="3">Loan for 5 days</option>
+                            </select>
+                        </div>
+                        <button type="button" id="updateBookBtn" class="btn">Update Book</button>
+                        <button type="button" class="btn btn" data-dismiss="modal">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        const SERVER = 'http://127.0.0.1:5000';
+        let books = []; // Define the books array globally
+
+        // show the books function
+        function fetchBooks() {
+            const tokens = JSON.parse(localStorage.getItem('tokens'));
+            if (!tokens || tokens.length === 0) {
+                console.error('No tokens found. Please log in.');
+                return;
+            }
+
+            const token = tokens[tokens.length - 1].access_token;
+
+            axios.get(SERVER + `/admin_show_books`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+                .then(response => {
+                    if (response.data && response.data.books && response.data.books.length > 0) {
+                        books = response.data.books; // Store the fetched books in the books array
+                        console.log(books);
+                        const bookListElement = document.getElementById('bookList');
+                        bookListElement.innerHTML = '';
+
+                        // Filter books based on search input value
+                        const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+                        const filteredBooks = books.filter(book =>
+                            book.title.toLowerCase().includes(searchTerm)
+                        );
+
+                        filteredBooks.forEach(book => {
+                            const col = document.createElement('div');
+                            col.classList.add('col-md-4', 'mb-4');
+
+                            const card = document.createElement('div');
+                            card.classList.add('card');
+
+                            const img = document.createElement('img');
+                            img.classList.add('card-img-top');
+                            img.src = book.photo ? `${SERVER}/${book.photo}` : '';
+                            img.alt = 'Book Photo';
+
+                            const cardBody = document.createElement('div');
+                            cardBody.classList.add('card-body');
+
+                            const title = document.createElement('h5');
+                            title.classList.add('card-title');
+                            title.textContent = book.title;
+
+                            const author = document.createElement('p');
+                            author.classList.add('card-text');
+                            author.textContent = `Author: ${book.author}`;
+
+                            const publishedDate = document.createElement('p');
+                            publishedDate.classList.add('card-text');
+                            publishedDate.textContent = `Published Date: ${book.published_date}`;
+
+                            const availability = document.createElement('p');
+                            availability.classList.add('card-text');
+                            availability.textContent = `Availability: ${book.availability}`;
+
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.classList.add('btn', 'btn-sm', 'btn-light', 'border');
+                            const trashIcon = document.createElement('span');
+                            trashIcon.textContent = '🗑️';
+                            deleteBtn.appendChild(trashIcon);
+                            deleteBtn.onclick = () => deleteBook(book.id);
+
+
+                            const editBtn = document.createElement('button');
+                            editBtn.classList.add('btn', 'btn-sm', 'btn-light', 'border');
+                            const editIcon = document.createElement('span');
+                            editIcon.textContent = '✎'; // You can use ; or any other preferred emoji code
+                            editBtn.appendChild(editIcon);
+                            editBtn.onclick = () => showUpdateForm(book.id);
+
+                            cardBody.appendChild(title);
+                            cardBody.appendChild(author);
+                            cardBody.appendChild(publishedDate);
+                            cardBody.appendChild(availability);
+                            cardBody.appendChild(editBtn);
+                            cardBody.appendChild(deleteBtn);
+
+                            card.appendChild(img);
+                            card.appendChild(cardBody);
+
+                            col.appendChild(card);
+                            bookListElement.appendChild(col);
+                        });
+                        console.log('Fetched books:', books);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching books:', error);
+                });
+        }
+
+        // Function to delete a book (mark as inactive)
+        function deleteBook(bookId) {
+            const tokens = JSON.parse(localStorage.getItem('tokens'));
+            if (!tokens || tokens.length === 0) {
+                console.error('No tokens found. Please log in.');
+                return;
+            }
+
+            const token = tokens[tokens.length - 1].access_token;
+
+            axios.delete(SERVER + `/delete_book/${bookId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+                .then(response => {
+                    console.log(response.data.message);
+                    fetchBooks(); // Refresh book list after deletion
+                })
+                .catch(error => {
+                    console.error('Error deleting book:', error);
+                });
+        }
+
+        // Function to show the update form in a modal
+        function showUpdateForm(bookId) {
+            const book = books.find(book => book.id === bookId);
+            if (book) {
+                document.getElementById('title').value = book.title;
+                document.getElementById('author').value = book.author;
+                document.getElementById('published_date').value = book.published_date;
+                document.getElementById('type').value = book.type;
+
+                // Show the modal
+                $('#updateBookModal').modal('show');
+
+                // Add an event listener to the update button
+                document.getElementById('updateBookBtn').onclick = () => updateBook(bookId);
+            }
+        }
+
+        // Function to update a book
+        function updateBook(bookId) {
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const publishedDate = document.getElementById('published_date').value;
+            const type = document.getElementById('type').value;
+
+            const tokens = JSON.parse(localStorage.getItem('tokens'));
+            if (!tokens || tokens.length === 0) {
+                console.error('No tokens found. Please log in.');
+                return;
+            }
+
+            const token = tokens[tokens.length - 1].access_token;
+
+            axios.put(SERVER + `/update_book/${bookId}`, {
+                title,
+                author,
+                published_date: publishedDate,
+                type
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+                .then(response => {
+                    console.log(response.data.message);
+                    $('#updateBookModal').modal('hide'); // Hide the modal after successful update
+                    fetchBooks(); // Refresh book list after update
+                })
+                .catch(error => {
+                    console.error('Error updating book:', error);
+                });
+        }
+
+
+        // Event listener for search input
+        document.getElementById('searchInput').addEventListener('input', fetchBooks);
+
+        // Fetch books when the page loads
+        document.addEventListener('DOMContentLoaded', fetchBooks);
+    </script>
+</body>
+
+</html>

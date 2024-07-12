@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <style>
+        .container {
+            padding: 80px 120px;
+        }
+
+        .person {
+            border: 10px solid transparent;
+            margin-bottom: 25px;
+            width: 80%;
+            height: 80%;
+            opacity: 0.7;
+        }
+
+        .person:hover {
+            border-color: #f1f1f1;
+        }
+
+        .carousel-inner img {
+            -webkit-filter: grayscale(90%);
+            filter: grayscale(90%);
+            /* make all photos black and white */
+            width: 100%;
+            /* Set width to 100% */
+            margin: auto;
+            max-height: 650px;
+        }
+
+        .carousel-caption h3 {
+            color: #fff !important;
+        }
+
+        @media (max-width: 600px) {
+            .carousel-caption {
+                display: none;
+                /* Hide the carousel text when the screen is less than 600 pixels wide */
+            }
+        }
+
+        .background-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            height: 100%;
+        }
+
+        .btn {
+            color: gray;
+        }
+
+        /* Updated CSS for side navbar and user account details */
+        #sideNavbar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 250px;
+            background-color: #f8f9fa;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: none;
+            padding: 20px;
+            z-index: 1000;
+            overflow-y: auto;
+            /* Allow scrolling if content exceeds height */
+        }
+
+        #sideNavbar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #sideNavbar li {
+            padding: 10px;
+        }
+
+        #sideNavbar .nav-link {
+            color: #000;
+        }
+
+        #sideNavbar .nav-link:hover {
+            color: #b0b2b5;
+        }
+
+        #accountDetails {
+            color: black;
+            margin-top: 20px;
+            display: none;
+            /* Initially hide account details */
+        }
+
+        /* Close button styles */
+        #closeSidebar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        /* Card styles for user account details */
+        .card {
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+
+        .card-body {
+            padding: 20px;
+            background-color: rgb(231, 231, 231);
+        }
+
+        .card-body p {
+            margin-bottom: 10px;
+        }
+
+        .profile-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 50px;
+            border: 3px solid #fff;
+            /* Add border around profile photo */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-photo img {
+            width: 135%;
+            height: auto;
+        }
+
+        @media (max-width: 576px) {
+            #sideNavbar {
+                width: 100%;
+            }
+        }
+
+        .navbar,
+        #userNameDisplay {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <!-- Navbar Toggler Button -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        </button>
+
+        <!-- Navbar Brand (Aligned to the Right) -->
+        <a class="navbar-brand mr-auto" href="show_books.html">Our books</a>
+
+        <!-- Collapsible Navbar Content (Aligned to the Left) -->
+        <div class="navbar-brand ml-auto" id="navbarNav">
+            <ul class="navbar-nav">
+                <li id="loginNavItem" class="nav-item">
+                    <a class="nav-link" href="login.html">Log in</a>
+                </li>
+                <li id="registerNavItem" class="nav-item">
+                    <a class="nav-link" href="register.html">Register</a>
+                </li>
+                <li class="nav-item">
+                    <button type="button" id="logoutButton" class="btn">Log out</button>
+                </li>
+                <li class="nav-item">
+                    <button type="button" id="toggleSideNavbarButton" class="btn btn-light">☰</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <style>
+        .nav-link,
+        .btn {
+            margin-bottom: 20px;
+            font-size: 16px;
+            /* Adjust font size as needed */
+        }
+    </style>
+
+    <!-- Side Navbar -->
+    <div id="sideNavbar">
+        <button id="closeSidebar" class="btn btn-light">&times;</button> <!-- Close button (X) -->
+        <ul>
+            <li id="accountDetails"> <!-- Placeholder for account details -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="profile-photo">
+                            <img src="placeholder.jpg" alt="">
+                        </div>
+                        <div id="user-details">
+                            <a class="nav-link" id="update-info-btn" href="account.html">Update Info</a>
+                            <p><strong>Username:</strong> <span id="username"></span></p>
+                            <p><strong>Email:</strong> <span id="email"></span></p>
+                            <p><strong>Age:</strong> <span id="age"></span></p>
+                            <p><strong>Phone Number:</strong> <span id="phone_number"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li id="adminLinkLoans" class="nav-item" style="display: none;">
+                <a href="show_admin_all_loans.html" class="nav-link">Show All Loans</a>
+            </li>
+            <li id="adminLinkLateLoans" class="nav-item" style="display: none;">
+                <a href="all_late_loans.html" class="nav-link">Show All Late Loans</a>
+            </li>
+            <li>
+                <a href="return.html" class="nav-link">Return Books</a>
+            </li>
+            <li>
+                <a href="show_my_loans.html" class="nav-link">My Loans</a>
+            </li>
+            <li>
+                <a href="show_my_late_loans.html" class="nav-link">My Late Loans</a>
+            </li>
+            <li id="adminLinkAddBook" class="nav-item" style="display: none;">
+                <a href="add_book.html" class="nav-link">Add Book</a>
+            </li>
+            <li id="adminLinkUpdateBooks" class="nav-item" style="display: none;">
+                <a href="books_for_admin.html" class="nav-link">Update Book</a>
+            </li>
+            <li id="adminLinkCustomers" class="nav-item" style="display: none;">
+                <a href="customers.html" class="nav-link">Customers</a>
+            </li>
+        </ul>
+    </div>
+    <div style="background-color: rgb(248, 248, 248);">
+        <p style="text-align: center;" id="userNameDisplay"></p><br>
+    </div>
+    <div id="myCarousel" class="carousel slide" data-ride="carousel">
+        <!-- Indicators -->
+        <ol class="carousel-indicators">
+            <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+            <li data-target="#myCarousel" data-slide-to="1"></li>
+            <li data-target="#myCarousel" data-slide-to="2"></li>
+        </ol>
+
+        <!-- Wrapper for slides -->
+        <div class="carousel-inner" role="listbox">
+            <div class="item active">
+                <img src="books2.jpg" alt="New York" width="1200" height="700">
+                <div class="carousel-caption">
+                </div>
+            </div>
+
+            <div class="item">
+                <img src="books.jpg" alt="Chicago" width="1200" height="700">
+                <div class="carousel-caption">
+                </div>
+            </div>
+
+
+            <!-- Left and right controls -->
+            <a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
+                <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
+                <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+        <div class="container text-center">
+            <h1>Library Du Moi</h1><br>
+            <h4><em>Welcome to our library</em></h4>
+            <p style="font-size: large;">Step into Library du Moi, where stories come alive and knowledge knows no
+                bounds.
+                Our library is dedicated to providing a rich collection of books across all genres and subjects,
+                catering to every reader's taste. <br>
+                Join our community, explore our resources, and let your imagination soar with the endless
+                possibilities within our shelves. <br>
+                Enjoy!</p>
+            <br>
+
+        </div>
+        <div class="container">
+            <h3>Contact</h3><br>
+            <div class="row test">
+                <div class="col-md-4">
+                    <p><span class="glyphicon glyphicon-map-marker"></span>Tel aviv, Israel</p>
+                    <p><span class="glyphicon glyphicon-phone"></span>Phone: 03-9301202</p>
+                    <p><span class="glyphicon glyphicon-envelope"></span>Email: librarydumoi@mail.com</p>
+                </div>
+            </div>
+
+            <!-- Axios (make sure to include after Bootstrap CSS) -->
+            <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+            <!-- Bootstrap JS and dependencies (make sure to include after Bootstrap CSS) -->
+            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+            <script>
+                const SERVER = "http://127.0.0.1:5000";
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const userName = urlParams.get('user_name');
+                    const logoutButton = document.getElementById('logoutButton');
+                    const userNameDisplay = document.getElementById('userNameDisplay');
+                    const loginNavItem = document.getElementById('loginNavItem'); // Access the login <li>
+                    const registerNavItem = document.getElementById('registerNavItem');
+                    const toggleSideNavbarButton = document.getElementById('toggleSideNavbarButton');
+                    const sideNavbar = document.getElementById('sideNavbar');
+                    const accountDetails = document.getElementById('accountDetails');
+                    const adminLinkUpdateBooks = document.getElementById('adminLinkUpdateBooks'); // Admin link for updating books
+                    const adminLinkCustomers = document.getElementById('adminLinkCustomers'); // Admin link for managing customers
+                    const adminLinkLoans = document.getElementById('adminLinkLoans');
+                    const adminLinkLateLoans = document.getElementById('adminLinkLateLoans');
+
+
+                    if (userName) {
+                        localStorage.setItem('userName', userName);
+                    }
+
+                    const storedUserName = localStorage.getItem('userName');
+                    if (storedUserName) {
+                        userNameDisplay.textContent = `Welcome, ${storedUserName}!`;
+                    } else {
+                        userNameDisplay.textContent = 'Welcome!';
+                    }
+
+                    userNameDisplay.style.fontSize = '20px';
+                });
+                // Function to toggle visibility of login and register buttons based on tokens
+                function toggleLoginButtons(tokensExist) {
+                    if (tokensExist) {
+                        loginNavItem.style.display = 'none';
+                        registerNavItem.style.display = 'none';
+                        logoutButton.style.display = 'block'; // Show logout button
+                    } else {
+                        loginNavItem.style.display = 'block';
+                        registerNavItem.style.display = 'block';
+                        logoutButton.style.display = 'none';
+                    }
+                }
+
+                // Check if tokens exist in localStorage
+                const tokens = JSON.parse(localStorage.getItem('tokens'));
+                toggleLoginButtons(tokens && tokens.length > 0);
+
+                logoutButton.addEventListener('click', () => {
+                    const tokens = JSON.parse(localStorage.getItem('tokens'));
+                    const tokenObj = tokens ? tokens[tokens.length - 1] : null;
+                    const token = tokenObj ? tokenObj.access_token : null;
+                    const username = tokenObj ? tokenObj.user_name : 'username';
+
+                    // logout
+                    if (token) {
+                        axios.post(SERVER + '/logout', {}, {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        })
+                            .then(response => {
+                                userNameDisplay.textContent = `Goodbye, ${username}!`;
+                                localStorage.removeItem('tokens');
+                                toggleLoginButtons(false); // Show the login and register buttons
+                            })
+                            .catch(error => {
+                                userNameDisplay.innerHTML = `<div class="alert alert-danger" role="alert">
+                                                    ${error.response ? error.response.data.message : "An error occurred"}
+                                                </div>`;
+                            });
+                    } else {
+                        userNameDisplay.innerHTML = `<div class="alert alert-warning" role="alert">
+                                                No user is currently logged in.
+                                            </div>`;
+                    }
+                });
+
+                // Function to fetch and display account info
+                function displayAccountInfo() {
+                    const tokens = JSON.parse(localStorage.getItem('tokens'));
+                    const tokenObj = tokens ? tokens[tokens.length - 1] : null;
+                    const token = tokenObj ? tokenObj.access_token : null;
+
+                    if (token) {
+                        axios.get(SERVER + '/account', {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        })
+                            .then(response => {
+                                const data = response.data;
+                                console.log(response.data);
+                                if (data.is_admin) {
+                                    adminLinkUpdateBooks.style.display = 'block';
+                                    adminLinkCustomers.style.display = 'block';
+                                    adminLinkAddBook.style.display = 'block';
+                                    adminLinkLoans.style.display = 'block';
+                                    adminLinkLateLoans.style.display = 'block';
+                                } else {
+                                    adminLinkUpdateBooks.style.display = 'none';
+                                    adminLinkCustomers.style.display = 'none';
+                                    adminLinkAddBook.style.display = 'none';
+                                    adminLinkLoans.style.display = 'none';
+                                    adminLinkLateLoans.style.display = 'none';
+                                }
+                                console.log(data.is_admin);
+                                // Update the user details in the sidebar
+                                document.getElementById('username').textContent = data.user_name;
+                                document.getElementById('email').textContent = data.email;
+                                document.getElementById('age').textContent = data.age;
+                                document.getElementById('phone_number').textContent = data.phone_number;
+
+                                // Show the account details section
+                                accountDetails.style.display = 'block';
+                            })
+                            .catch(error => {
+                                console.log(error);
+                                userNameDisplay.innerHTML = `<div class="alert alert-danger" role="alert">
+                                            ${error.response ? error.response.data.message : "An error occurred"}
+                                        </div>`;
+                            });
+                    }
+                }
+
+                toggleSideNavbarButton.addEventListener('click', () => {
+                    sideNavbar.style.display = 'block';
+                    displayAccountInfo(); // Fetch and display account info when opening sidebar
+                });
+
+                const closeSidebarButton = document.getElementById('closeSidebar');
+                const sideNavbar = document.getElementById('sideNavbar');
+
+                closeSidebarButton.addEventListener('click', () => {
+                    sideNavbar.style.display = 'none';
+                });
+
+                // Initial fetch of account info
+                displayAccountInfo();
+            </script>
+
+</body>
+
+</html>

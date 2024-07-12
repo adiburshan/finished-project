@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Books</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Additional CSS styles can be added here */
+        .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            /* Ensure content doesn't overflow */
+            transition: transform 0.2s ease-in-out;
+            /* Optional: Add a smooth hover effect */
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            /* Optional: Scale up on hover */
+        }
+
+        .card img {
+            max-width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Ensure all columns in the grid have the same height */
+        #bookList .col-md-4 {
+            height: 100%;
+            margin-bottom: 20px;
+            /* Optional: Add margin between columns */
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">Home page</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="show_books.html">Books</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="return.html">Return Book</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="show_my_loans.html">My Loans</a>
+                </li>
+                <li>
+                    <a href="show_my_late_loans.html" class="nav-link">My Late Loans</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1 style="text-align: center;">Loan Books</h1>
+        <div id="bookList" class="row"></div> <!-- Container for book list -->
+    </div>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const SERVER = 'http://127.0.0.1:5000';
+
+        async function fetchBooks() {
+            try {
+                const response = await axios.get(SERVER + `/show_books`);
+                console.log('Response:', response);
+
+                // Clear previous content
+                const bookListElement = document.getElementById('bookList');
+                bookListElement.innerHTML = '';
+
+                // Check if response.data.books is defined and not empty
+                if (response.data && response.data.books && response.data.books.length > 0) {
+                    const books = response.data.books;
+                    books.forEach(book => {
+                        const col = document.createElement('div');
+                        col.classList.add('col-md-4', 'mb-4');
+
+                        // Construct the card body with photo if available
+                        const cardBody = `
+                            <div class="card">
+                                ${book.photo ? `<img src="${SERVER}/${book.photo}" class="card-img-top" alt="Book Photo">` : '<div class="card-img-top">No Photo Available</div>'}
+                                <div class="card-body">
+                                    <h5 class="card-title">${book.title}</h5>
+                                    <p class="card-text">Author: ${book.author}</p>
+                                    <p class="card-text">Published Date: ${book.published_date}</p>
+                                    <p class="card-text">Availability: ${book.availability}</p>
+                                    ${book.availability === 'Available' ? `<button style="background-color: rgb(219, 223, 223);" class="btn btn btn-sm mt-2" onclick="loanBook('${book.title}')">Loan Book</button>` : '<p class="text-muted mt-2">Book unavailable for loan</p>'}
+                                </div>
+                            </div>
+                        `;
+                        col.innerHTML = cardBody;
+                        bookListElement.appendChild(col);
+
+                        // Log the book ID in console to ensure it's being passed correctly
+                        console.log('Book ID:', book.id);
+                    });
+                } else {
+                    // Handle case where no books are returned
+                    bookListElement.innerHTML = '<p>No books available</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching books:', error);
+            }
+        }
+
+        async function loanBook(bookTitle) {
+            try {
+                const tokens = JSON.parse(localStorage.getItem('tokens'));
+                if (!tokens || tokens.length === 0) {
+                    throw new Error('No tokens found. Please log in.');
+                }
+
+                // For simplicity, assuming only one token is saved (latest one)
+                const token = tokens[tokens.length - 1].access_token;
+
+                const response = await axios.post(SERVER + `/loan_book/${encodeURIComponent(bookTitle)}`, null, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                console.log('Loan Response:', response);
+
+                // Assuming you want to refresh the book list after loaning
+                fetchBooks();
+            } catch (error) {
+                console.error('Error loaning book:', error);
+                if (error.message === 'No tokens found. Please log in.') {
+                    alert('You need to log in first.');
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        // Call fetchBooks function when the page loads
+        fetchBooks();
+    </script>
+
+</body>
+
+</html>

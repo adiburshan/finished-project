@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .background-row {
+            background: url('background.jpg') no-repeat center center;
+            background-size: cover;
+            height: 100vh;
+            color: rgb(3, 3, 3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid background-row">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Login</div>
+                    <div class="card-body">
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <button type="button" style="background-color: rgb(219, 223, 223);" class="btn btn"
+                                id="loginBtn">Login</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const SERVER = 'http://127.0.0.1:5000';
+            const loginForm = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                const formData = new FormData(loginForm);
+                const email = formData.get('email');
+                const password = formData.get('password');
+
+                axios.post(SERVER + '/login', {
+                    email: email,
+                    password: password
+                })
+                    .then(function (response) {
+                        const { access_token, user_name } = response.data;
+                        let tokens = JSON.parse(localStorage.getItem('tokens')) || [];
+                        tokens.push({ access_token, user_name });
+                        localStorage.setItem('tokens', JSON.stringify(tokens));
+                        window.location.href = `index.html?user_name=${encodeURIComponent(user_name)}`;
+                    })
+                    .catch(function (error) {
+                        console.error('Login error:', error);
+                        alert('Invalid credentials. Please try again.');
+                    });
+            });
+        });
+    </script>
+
+</body>
+
+</html>

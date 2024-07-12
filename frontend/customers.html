@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer List</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .container {
+            margin-top: 50px;
+            background-color: white;
+        }
+
+        .inactive {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .delete-btn {
+            background-color: transparent;
+            border: none;
+            color: #b0afaf;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 5px;
+        }
+
+        .update-btn {
+            background-color: transparent;
+            color: #6c757d;
+            /* Grey color */
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 5px;
+        }
+
+        /* Style for the update form */
+        .update-form {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            max-width: 80%;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        /* Custom style for filter input */
+        .filter-input {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="index.html">Home page</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="show_books.html">Books</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="loanBookLink" href="loan_book.html">Loan Book</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="return.html">Return Book</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="show_my_loans.html">My Loans</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+
+<body style="background: url('background.jpg') no-repeat center center fixed; background-size: cover;">
+    <div class="container">
+        <h1 class="text-center">Customer List</h1>
+        <div class="mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search Input">
+            <select id="statusFilter" class="form-control">
+                <option value="All customers">All Customers</option><br><br>
+                <option value="Active">Active Customers</option>
+                <option value="Not active">Not active Customers</option>
+            </select>
+        </div>
+        <div id="customerTableContainer"></div>
+    </div>
+    <div id="updateCustomerForm" class="update-form">
+        <form id="updateForm" class="mt-3">
+            <div class="form-group">
+                <label for="user_name">User Name</label>
+                <input type="text" class="form-control" id="user_name" placeholder="User Name" required>
+            </div>
+            <div class="form-group">
+                <label for="age">Age</label>
+                <input type="number" class="form-control" id="age" placeholder="Age" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <input type="text" class="form-control" id="phone_number" placeholder="Phone Number" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" placeholder="Password" required>
+            </div>
+            <div class="form-group">
+                <label for="is_admin">Admin?</label>
+                <select class="form-control" id="is_admin" required>
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+            <button style="background-color: #6c757d;" type="button" id="updateCustomerBtn"
+                class="btn btn-primary">Update Customer</button>
+            <button type="button" id="cancelUpdateBtn" class="btn btn-secondary ml-2">Cancel</button>
+        </form>
+    </div>
+
+
+
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const SERVER = "http://127.0.0.1:5000";
+        const customerTableContainer = document.getElementById('customerTableContainer');
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const updateCustomerForm = document.getElementById('updateCustomerForm');
+        const updateForm = document.getElementById('updateForm');
+        const updateCustomerBtn = document.getElementById('updateCustomerBtn');
+        const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
+        let customers = [];
+
+        // Event listener for update customer button
+        updateCustomerBtn.addEventListener('click', updateCustomer);
+
+        // Event listener for cancel update button
+        cancelUpdateBtn.addEventListener('click', () => {
+            updateCustomerForm.style.display = 'none';
+        });
+
+
+        // Fetch customers when the page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchCustomers();
+        });
+
+        searchInput.addEventListener('input', async () => {
+            await fetchCustomers();
+        });
+
+        statusFilter.addEventListener('change', async () => {
+            await fetchCustomers();
+        });
+        // show all the customers function
+        async function fetchCustomers() {
+            try {
+                const tokens = JSON.parse(localStorage.getItem('tokens'));
+                if (!tokens || tokens.length === 0) {
+                    throw new Error('No tokens found. Please log in.');
+                }
+
+                // For simplicity, assuming only one token is saved (latest one)
+                const token = tokens[tokens.length - 1].access_token;
+
+                const response = await axios.get(SERVER + `/show_customers`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                console.log('Response:', response);
+                customers = response.data.customers;
+                console.log('Customers:', customers);
+
+
+                // Filter customers based on search input
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                customers = customers.filter(customer =>
+                    customer.user_name.toLowerCase().includes(searchTerm)
+                );
+
+                // Filter customers based on status filter
+                const filterValue = statusFilter.value.toLowerCase(); // Ensure lowercase for comparison
+                if (filterValue === 'active') {
+                    customers = customers.filter(customer => customer.customer_active);
+                } else if (filterValue === 'not active') {
+                    customers = customers.filter(customer => !customer.customer_active);
+                }
+
+                // Render filtered customers
+                let tableHTML = `
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User Name</th>
+                        <th>Age</th>
+                        <th>Email</th>
+                        <th>Phone Number</th>
+                        <th>Is Admin</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${customers.map(customer => `
+                        <tr class="${customer.customer_active ? '' : 'inactive'}">
+                            <td>${customer.id}</td>
+                            <td>${customer.user_name}</td>
+                            <td>${customer.age}</td>
+                            <td>${customer.email}</td>
+                            <td>${customer.phone_number}</td>
+                            <td>${customer.is_admin ? 'Yes' : 'No'}</td>
+                            <td>${customer.customer_active ? 'Active' : 'Not Active'}</td>
+                            <td>
+                                <button class="update-btn" onclick="showUpdateForm(${customer.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="delete-btn" onclick="deleteCustomer(${customer.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                customerTableContainer.innerHTML = tableHTML;
+            } catch (error) {
+                console.error('Error fetching customers:', error);
+                customerTableContainer.innerHTML = '<p class="text-danger">Failed to load customers. Please check your authentication.</p>';
+            }
+        }
+
+        // delete customer
+        async function deleteCustomer(customerId) {
+            try {
+                const tokens = JSON.parse(localStorage.getItem('tokens'));
+                if (!tokens || tokens.length === 0) {
+                    throw new Error('No tokens found. Please log in.');
+                }
+
+                const token = tokens[tokens.length - 1].access_token;
+
+                const confirmDelete = confirm('Are you sure you want to delete this customer?');
+                if (!confirmDelete) return;
+
+                const response = await axios.delete(SERVER + `/delete_customer/${customerId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                console.log('Delete Response:', response);
+
+                // Refresh customer list after deletion
+                await fetchCustomers();
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                // Optionally show an error message or handle as needed
+            }
+        }
+        // update customer
+        async function updateCustomer(event) {
+            try {
+                event.preventDefault(); // Prevent form submission
+
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    throw new Error('No access token found. Please log in.');
+                }
+
+                const customerId = updateCustomerForm.getAttribute('data-customer-id');
+                if (!customerId) {
+                    throw new Error('Customer ID not found.');
+                }
+
+                // Construct the updated customer data object
+                const updatedCustomerData = {
+                    user_name: document.getElementById('user_name').value,
+                    age: document.getElementById('age').value,
+                    email: document.getElementById('email').value,
+                    phone_number: document.getElementById('phone_number').value,
+                    password: document.getElementById('password').value
+                };
+
+                // Make the PUT request to update the customer
+                const response = await axios.put(SERVER + `/update_customer/${customerId}`, updatedCustomerData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                // Check if the server response contains the updated customer data
+                const customer = response.data.customer;
+                const isAdmin = response.data.is_admin;
+
+                if (!customer) {
+                    throw new Error('Customer not found.');
+                }
+
+                const canUpdate = isAdmin || customer.id === customerId;
+                if (!canUpdate) {
+                    throw new Error('You do not have permission to update this customer.');
+                }
+
+                // Log update message and refresh customer list
+                console.log('Update Response:', response.data.message);
+                fetchCustomers(); // Assuming fetchCustomers() is a function to update the customer list
+
+                // Hide the update form after successful update
+                updateCustomerForm.style.display = 'none';
+            } catch (error) {
+                console.error('Error updating customer:', error);
+            }
+        }
+        function showUpdateForm(customerId) {
+            // Fetch customer details to pre-fill the update form
+            const customer = customers.find(cust => cust.id === customerId);
+            if (!customer) return;
+
+            document.getElementById('user_name').value = customer.user_name;
+            document.getElementById('age').value = customer.age;
+            document.getElementById('email').value = customer.email;
+            document.getElementById('phone_number').value = customer.phone_number;
+            document.getElementById('password').value = ''; // Password should be entered manually
+
+            // Set the customer ID in the form's data attribute
+            updateCustomerForm.setAttribute('data-customer-id', customerId);
+            updateCustomerForm.style.display = 'block';
+        }
+
+        async function updateCustomer(event) {
+            try {
+                event.preventDefault(); // Prevent form submission
+
+                const tokens = JSON.parse(localStorage.getItem('tokens'));
+                if (!tokens || tokens.length === 0) {
+                    throw new Error('No tokens found. Please log in.');
+                }
+
+                const token = tokens[tokens.length - 1].access_token;
+
+                const customerId = updateCustomerForm.getAttribute('data-customer-id');
+                if (!customerId) {
+                    throw new Error('Customer ID not found.');
+                }
+
+                // Construct the updated customer data object
+                const updatedCustomerData = {
+                    user_name: document.getElementById('user_name').value,
+                    age: document.getElementById('age').value,
+                    email: document.getElementById('email').value,
+                    phone_number: document.getElementById('phone_number').value,
+                    password: document.getElementById('password').value,
+                    is_admin: document.getElementById('is_admin').value === 'true'
+                };
+
+                // Make the PUT request to update the customer
+                const response = await axios.put(`${SERVER}/update_customer/${customerId}`, updatedCustomerData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                console.log('Update Response:', response.data.message);
+                await fetchCustomers(); // Refresh the customer list after update
+
+                // Hide the update form after successful update
+                updateCustomerForm.style.display = 'none';
+            } catch (error) {
+                console.error('Error updating customer:', error);
+            }
+        }
+
+    </script>
+</body>
+
+</html>

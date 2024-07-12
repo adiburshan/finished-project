@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        /* Custom CSS styles */
+        .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card img {
+            max-width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        #bookList .col-md-4 {
+            height: 100%;
+            margin-bottom: 20px;
+        }
+
+        .background-row {
+            background: url('secindcover.jpg') no-repeat center center;
+            background-size: cover;
+            height: 100vh;
+            color: white;
+        }
+
+        .background-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            height: 100%;
+        }
+
+        .btn {
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">Home page</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="loan_book.html">Loan Book</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="return.html">Return Book</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="show_my_loans.html">My Loans</a>
+                </li>
+                <li>
+                    <a href="show_my_late_loans.html" class="nav-link">My Late Loans</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1 style="text-align: center;">Books</h1>
+        <div class="mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by Title">
+        </div>
+        <div id="bookList" class="row"></div>
+    </div>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const SERVER = 'http://127.0.0.1:5000';
+
+        // Fetch books function
+        function fetchBooks() {
+            axios.get(SERVER + `/show_books`)
+                .then(response => {
+                    if (response.data && response.data.books && response.data.books.length > 0) {
+                        const books = response.data.books;
+                        const bookListElement = document.getElementById('bookList');
+                        bookListElement.innerHTML = '';
+
+                        // Filter books based on search input value
+                        const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+                        const filteredBooks = books.filter(book =>
+                            book.title.toLowerCase().includes(searchTerm)
+                        );
+
+                        filteredBooks.forEach(book => {
+                            if (book.availability === 'Available') {
+                                const col = document.createElement('div');
+                                col.classList.add('col-md-4', 'mb-4');
+
+                                const cardBody = `
+                                    <div class="card">
+                                        ${book.photo ? `<img src="${SERVER}/${book.photo}" class="card-img-top" alt="Book Photo">` : '<div class="card-img-top">No Photo Available</div>'}
+                                        <div class="card-body">
+                                            <h5 class="card-title">${book.title}</h5>
+                                            <p class="card-text">Author: ${book.author}</p>
+                                            <p class="card-text">Published Date: ${book.published_date}</p>
+                                            <p class="card-text">Availability: ${book.availability}</p>
+                                        </div>
+                                    </div>
+                                `;
+                                col.innerHTML = cardBody;
+                                bookListElement.appendChild(col);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching books:', error);
+                });
+        }
+
+        // Call fetchBooks function when the page loads
+        fetchBooks();
+
+        // Event listener for input change in search field
+        document.getElementById('searchInput').addEventListener('input', fetchBooks);
+    </script>
+</body>
+
+</html>

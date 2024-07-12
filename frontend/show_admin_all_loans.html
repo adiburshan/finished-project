@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Loans</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <style>
+        .late-loan {
+            background-color: #f8d7da;
+            /* Red background color */
+            border-color: #f5c6cb;
+            /* Red border color */
+            color: #721c24;
+            /* Dark text color for contrast */
+        }
+
+        .background-row {
+            background: url('background.jpg') no-repeat center center;
+            background-size: cover;
+            height: 100vh;
+            color: rgb(3, 3, 3);
+        }
+    </style>
+</head>
+
+<body style="background: url('background.jpg') no-repeat center center fixed; background-size: cover;">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">Home</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="show_books.html">Books</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="loan_book.html">Loan Book</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="return.html">Return Book</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 style="color: white;">All Loans</h1>
+        <div id="loanList" class="list-group">
+            <div class="form-group">
+                <label for="loanFilter">Filter Loans:</label>
+                <select class="form-control" id="loanFilter">
+                    <option value="all">All Loans</option>
+                    <option value="late">Late in Return</option>
+                </select>
+            </div>
+            <!-- Loan items will be appended here -->
+        </div>
+    </div>
+
+    <script>
+        const SERVER = 'http://127.0.0.1:5000';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const tokens = JSON.parse(localStorage.getItem('tokens'));
+            const tokenObj = tokens ? tokens[tokens.length - 1] : null;
+            const token = tokenObj ? tokenObj.access_token : null;
+
+            if (token) {
+                axios.get(SERVER + `/all_loans`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(response => {
+                        const loans = response.data.loans;
+                        const loanList = document.getElementById('loanList');
+                        const loanFilter = document.getElementById('loanFilter');
+
+                        const renderLoans = (filteredLoans) => {
+                            loanList.innerHTML = '';
+                            if (filteredLoans.length === 0) {
+                                loanList.innerHTML = '<div class="alert alert-info">No loans found.</div>';
+                            } else {
+                                filteredLoans.forEach(loan => {
+                                    const loanItem = document.createElement('div');
+                                    loanItem.className = 'list-group-item';
+                                    loanItem.innerHTML = `
+                                    <h5 class="mb-1">Book Title: ${loan.book_title}</h5>
+                                    <p class="mb-1">Customer Name: ${loan.customer_name}</p>
+                                    <p class="mb-1">Loan Date: ${loan.loan_date}</p>
+                                    <p class="mb-1">Return Date: ${loan.return_date}</p>
+                                `;
+                                    loanList.appendChild(loanItem);
+                                });
+                            }
+                        };
+
+                        const filterLoans = (loans, filterValue) => {
+                            if (filterValue === 'late') {
+                                const currentDate = new Date();
+                                const lateLoans = loans.filter(loan => {
+                                    return new Date(loan.return_date) < currentDate && !loan.returned;
+                                });
+                                return lateLoans;
+                            } else {
+                                return loans;
+                            }
+                        };
+
+                        const loadAndRenderLoans = () => {
+                            axios.get(SERVER + `/all_loans`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            })
+                                .then(response => {
+                                    const loans = response.data.loans;
+                                    const filteredLoans = filterLoans(loans, loanFilter.value);
+                                    renderLoans(filteredLoans);
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching loans:', error);
+                                    if (error.response && error.response.status === 401) {
+                                        alert('Your session has expired. Please log in again.');
+                                        localStorage.removeItem('tokens');
+                                        window.location.href = 'login.html';  // Redirect to login page on 401 error
+                                    } else if (error.response && error.response.status === 403) {
+                                        alert('Admin access is required.');
+                                        window.location.href = 'index.html';  // Redirect to home page if not an admin
+                                    } else {
+                                        alert('An error occurred while fetching loans.');
+                                    }
+                                });
+                        };
+
+                        loanFilter.addEventListener('change', () => {
+                            loadAndRenderLoans();
+                        });
+
+                        // Initial load
+                        loadAndRenderLoans();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching loans:', error);
+                        if (error.response && error.response.status === 401) {
+                            alert('Your session has expired. Please log in again.');
+                            localStorage.removeItem('tokens');
+                            window.location.href = 'login.html';  // Redirect to login page on 401 error
+                        } else if (error.response && error.response.status === 403) {
+                            alert('Admin access is required.');
+                            window.location.href = 'index.html';  // Redirect to home page if not an admin
+                        } else {
+                            alert('An error occurred while fetching loans.');
+                        }
+                    });
+            } else {
+                alert('You need to log in first.');
+                window.location.href = 'login.html';  // Redirect to login page if token is not found
+            }
+        });
+    </script>
+</body>
+
+</html>

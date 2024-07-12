@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Loans</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body style="background: url('background.jpg') no-repeat center center fixed; background-size: cover;">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">Home page</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="show_books.html">Books</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="loan_book.html">Loan Book</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="show_my_loans.html">My Loans</a>
+                </li>
+                <li>
+                    <a href="show_my_late_loans.html" class="nav-link">My Late Loans</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1 style="color: white;">Return your book</h1>
+        <div id="loan-list" class="list-group">
+            <!-- Loan items will be appended here -->
+        </div>
+    </div>
+
+    <script>
+        const SERVER = "http://127.0.0.1:5000";
+        document.addEventListener('DOMContentLoaded', () => {
+            const tokens = JSON.parse(localStorage.getItem('tokens'));
+            const tokenObj = tokens ? tokens[tokens.length - 1] : null;
+            const token = tokenObj ? tokenObj.access_token : null;
+            const username = tokenObj ? tokenObj.user_name : 'username';
+            console.log('Access Token:', token);
+
+            if (token) {
+                axios.get(SERVER + '/my_loans', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(response => {
+                        const loans = response.data.loans;
+                        const loanList = document.getElementById('loan-list');
+                        if (loans.length === 0) {
+                            loanList.innerHTML = '<div class="alert alert-info">No loans found.</div>';
+                        } else {
+                            loans.forEach(loan => {
+                                const loanItem = document.createElement('div');
+                                loanItem.className = 'list-group-item list-group-item-action';
+                                loanItem.innerHTML = `
+                                <h5 class="mb-1">${loan.book_title}</h5>
+                                <p class="mb-1">Loan Date: ${loan.loan_date}</p>
+                                <p class="mb-1">Return Date: ${loan.return_date ? loan.return_date : 'Not returned yet'}</p>
+                                <button class="btn btn-danger return-button" data-loan-id="${loan.id}">Return Book</button>
+                            `;
+                                loanList.appendChild(loanItem);
+
+                                document.querySelectorAll('.return-button').forEach(button => {
+                                    button.addEventListener('click', () => {
+                                        const loanId = button.getAttribute('data-loan-id');
+                                        returnBook(loanId, token, button); // Pass button to returnBook function
+                                    });
+                                });
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching loans:', error);
+                        if (error.response && error.response.status === 401) {
+                            alert('Your session has expired. Please log in again.');
+                            localStorage.removeItem('tokens');
+                            window.location.href = 'login.html';  // Redirect to login page on 401 error
+                        } else {
+                            alert('An error occurred while fetching your loans.');
+                        }
+                    });
+            } else {
+                alert('You need to log in first.');
+                window.location.href = 'login.html';  // Redirect to login page if token is not found
+            }
+        });
+
+        const returnBook = (loanId, token, button) => {
+            axios.put(SERVER + `/return_book/${loanId}`, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(response => {
+                    console.log('Return Book API Response:', response);
+                    alert(response.data.message);
+
+                    // Change background color of the parent list item (card) to grey
+                    const listItem = button.closest('.list-group-item');
+                    if (listItem) {
+                        listItem.style.backgroundColor = 'grey'; // Set grey background color
+                    } else {
+                        console.warn('List Item not found:', button);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error returning book:', error);
+                    let message = 'An error occurred';
+                    if (error.response) {
+                        message = error.response.data.message;
+                    }
+                    alert(message);
+                });
+        }
+
+
+    </script>
+</body>
+
+</html>

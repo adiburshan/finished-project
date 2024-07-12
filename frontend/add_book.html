@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Book</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="index.html">Home page</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="show_books.html">Books</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="loanBookLink" href="loan_book.html">Loan Book</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="return.html">Return Book</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="show_my_loans.html">My Loans</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<body style="background: url('background.jpg') no-repeat center center fixed; background-size: cover;">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Add Book</div>
+                    <div class="card-body">
+                        <form id="addBookForm">
+                            <div class="form-group">
+                                <label for="title">Title</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="author">Author</label>
+                                <input type="text" class="form-control" id="author" name="author" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="published_date">Published Date</label>
+                                <input type="number" class="form-control" id="published_date" name="published_date"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label for="type">Type</label>
+                                <select class="form-control" id="type" name="type" required>
+                                    <option value="1">Loan for 15 days</option>
+                                    <option value="2">Loan for 10 days</option>
+                                    <option value="3">Loan for 5 days</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="photo">Photo</label>
+                                <input type="file" class="form-control-file" id="photo" name="photo" accept="image/*"
+                                    required>
+                            </div>
+
+                            <button type="button" class="btn btn" style="background-color: rgb(229, 229, 229);"
+                                id="addBookBtn">Add Book</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const SERVER = 'http://127.0.0.1:5000';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const addBookForm = document.getElementById('addBookForm');
+            const addBookBtn = document.getElementById('addBookBtn');
+
+            addBookBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                // Get form data
+                const formData = new FormData(addBookForm);
+
+                // Set availability to true by default
+                formData.set('availability', 'true');
+
+                // Retrieve tokens from local storage
+                const tokens = JSON.parse(localStorage.getItem('tokens')) || [];
+                if (tokens.length === 0) {
+                    alert('No tokens found. Please login first.');
+                    return;
+                }
+
+                const token = tokens[tokens.length - 1].access_token; // Assuming last token is the active one
+
+                try {
+                    // Send POST request to add_book endpoint
+                    const response = await axios.post(SERVER + `/add_book`, formData, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data' // Ensure correct content type for file upload
+                        }
+                    });
+
+                    // Handle successful book addition
+                    alert('Book added successfully');
+                    addBookForm.reset();
+                } catch (error) {
+                    // Handle error
+                    console.error('Error adding book:', error.response ? error.response.data.message : error.message);
+                    alert('Failed to add book. Please try again.');
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>

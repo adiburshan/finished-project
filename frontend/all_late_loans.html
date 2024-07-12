@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Overdue Loans</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body style="background: url('background.jpg') no-repeat center center fixed; background-size: cover;">
+    <body style="background: url('background.jpg') no-repeat center center fixed; background-size: cover;">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="index.html">Home page</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="show_books.html">Books</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="loan_book.html">Loan Book</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="return.html">Return Book</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="show_my_loans.html">My Loans</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    <div class="container mt-5">
+        <h2 style="color: white;">Overdue Loans</h2>
+        <div style="color: white;" id="overdueLoanList"></div><br><br>
+    </div>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+    <!-- Bootstrap JS and Axios -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        const SERVER = 'http://127.0.0.1:5000';
+        document.addEventListener('DOMContentLoaded', () => {
+            const tokens = JSON.parse(localStorage.getItem('tokens'));
+            const tokenObj = tokens ? tokens[tokens.length - 1] : null;
+            const token = tokenObj ? tokenObj.access_token : null;
+
+            if (token) {
+                axios.get(SERVER + '/all_late_loans', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(response => {
+                        const loans = response.data;
+                        displayOverdueLoans(loans); // Function to display overdue loans
+                    })
+                    .catch(error => {
+                        console.error('Error fetching overdue loans:', error);
+                    });
+            } else {
+                console.error('Token not found in storage or invalid.');
+            }
+
+            function displayOverdueLoans(loans) {
+                const overdueLoanList = document.getElementById('overdueLoanList');
+
+                if (!overdueLoanList) {
+                    console.error('Element with ID overdueLoanList not found.');
+                    return;
+                }
+
+                overdueLoanList.innerHTML = ''; // Clear previous content
+
+                if (loans.length === 0) {
+                    overdueLoanList.innerHTML = '<p>No overdue loans found.</p>';
+                } else {
+                    // Generate HTML for overdue loans
+                    let html = '<table class="table table-striped">' +
+                        '<thead><tr><th>Loan ID</th><th>Customer Name</th><th>Book Title</th><th>Loan Date</th><th>Return Date</th></tr></thead>' +
+                        '<tbody>';
+
+                    loans.forEach(loan => {
+                        const returnDate = loan.return_date ? new Date(loan.return_date).toLocaleDateString() : 'Not returned yet';
+
+                        html += '<tr>' +
+                            `<td>${loan.loan_id}</td>` +
+                            `<td>${loan.customer_name}</td>` +
+                            `<td>${loan.book_title}</td>` +
+                            `<td>${new Date(loan.loan_date).toLocaleDateString()}</td>` +
+                            `<td>${returnDate}</td>` +
+                            '</tr>';
+                    });
+
+                    html += '</tbody></table>';
+                    overdueLoanList.innerHTML = html;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
